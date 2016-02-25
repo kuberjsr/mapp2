@@ -21,7 +21,7 @@ angular.module('mm.addons.mod_resource')
  * @ngdoc service
  * @name $mmaModResource
  */
-.factory('$mmaModResource', function($mmFilepool, $mmSite, $mmUtil, $mmFS, $http, $log, $q, $sce, $mmApp, $mmSitesManager,
+.factory('$mmaModResource', function($mmFilepool, $mmSite, $mmUtil, $mmFS, $http, $log, $q, $sce, $mmApp,
             mmaModResourceComponent) {
     $log = $log.getInstance('$mmaModResource');
 
@@ -227,13 +227,30 @@ angular.module('mm.addons.mod_resource')
                 } else {
                     // Now that we have the content, we update the SRC to point back to
                     // the external resource. That will be caught by mm-format-text.
-                    return $mmUtil.restoreSourcesInHtml(response.data, paths, function(anchor, href) {
-                        var ext = $mmFS.getFileExtension(href);
-                        if (ext == 'html' || ext == 'html') {
-                            anchor.setAttribute('mma-mod-resource-html-link', 1);
-                            anchor.setAttribute('data-href', href);
+                    var html = angular.element('<div>');
+                        html.append(response.data);
+
+                    angular.forEach(html.find('img'), function(img) {
+                        var src = paths[decodeURIComponent(img.getAttribute('src'))];
+                        if (typeof src !== 'undefined') {
+                            img.setAttribute('src', src);
                         }
                     });
+                    // We do the same for links.
+                    angular.forEach(html.find('a'), function(anchor) {
+                        var href = decodeURIComponent(anchor.getAttribute('href')),
+                            url = paths[href],
+                            ext = $mmFS.getFileExtension(href);
+                        if (typeof url !== 'undefined') {
+                            anchor.setAttribute('href', url);
+                            if (ext == 'html' || ext == 'html') {
+                                anchor.setAttribute('mma-mod-resource-html-link', 1);
+                                anchor.setAttribute('data-href', href);
+                            }
+                        }
+                    });
+
+                    return html.html();
                 }
             });
         });
@@ -307,23 +324,6 @@ angular.module('mm.addons.mod_resource')
     };
 
     /**
-     * Check if resource plugin is enabled in a certain site.
-     *
-     * @module mm.addons.mod_resource
-     * @ngdoc method
-     * @name $mmaModResource#isPluginEnabled
-     * @param  {String} [siteId] Site ID. If not defined, current site.
-     * @return {Promise}         Promise resolved with true if plugin is enabled, rejected or resolved with false otherwise.
-     */
-    self.isPluginEnabled = function(siteId) {
-        siteId = siteId || $mmSite.getId();
-
-        return $mmSitesManager.getSite(siteId).then(function(site) {
-            return site.canDownloadFiles();
-        });
-    };
-
-    /**
      * Report the resource as being viewed.
      *
      * @module mm.addons.mod_resource
@@ -357,17 +357,12 @@ angular.module('mm.addons.mod_resource')
             return $q.reject();
         }
 
-        var files = [contents[0]],
-            siteId = $mmSite.getId(),
-            revision = $mmFilepool.getRevisionFromFileList(files),
-            timeMod = $mmFilepool.getTimemodifiedFromFileList(files),
+        var url = contents[0].fileurl,
             promise;
 
         if ($mmFS.isAvailable()) {
             // The file system is available.
-            promise = $mmFilepool.downloadPackage(siteId, files, mmaModResourceComponent, moduleId, revision, timeMod).then(function() {
-                return $mmFilepool.getUrlByUrl(siteId, contents[0].fileurl, mmaModResourceComponent, moduleId, timeMod);
-            });
+            promise = $mmFilepool.downloadUrl($mmSite.getId(), url, false, mmaModResourceComponent, moduleId);
         } else {
             // We use the live URL.
             promise = $q.when($mmSite.fixPluginfileURL(url));

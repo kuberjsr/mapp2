@@ -71,7 +71,7 @@ angular.module('mm.addons.mod_resource')
                 });
             } else if ($mmaModResource.isDisplayedInline(module)) {
                 var downloadFailed = false;
-                return $mmaModResource.downloadAllContent(module).catch(function(err) {
+                $mmaModResource.downloadAllContent(module).catch(function(err) {
                     // Mark download as failed but go on since the main files could have been downloaded.
                     downloadFailed = true;
                 }).finally(function() {
@@ -97,14 +97,14 @@ angular.module('mm.addons.mod_resource')
                 $scope.mode = 'external';
 
                 $scope.open = function() {
-                    var modal = $mmUtil.showModalLoading();
+                    var modal = $mmUtil.showModalLoading('mm.core.downloading', true);
 
                     $mmaModResource.openFile(module.contents, module.id).then(function() {
                         $mmaModResource.logView(module.instance).then(function() {
                             $mmCourse.checkModuleCompletion(courseid, module.completionstatus);
                         });
                     }).catch(function(error) {
-                        if (error && typeof error == 'string') {
+                        if (error) {
                             $mmUtil.showErrorModal(error);
                         } else {
                             $mmUtil.showErrorModal('mma.mod_resource.errorwhileloadingthecontent', true);

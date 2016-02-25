@@ -21,7 +21,7 @@ angular.module('mm.addons.mod_page')
  * @ngdoc service
  * @name $mmaModPage
  */
-.factory('$mmaModPage', function($mmFilepool, $mmSite, $mmFS, $http, $log, $q, $mmSitesManager, $mmUtil, mmaModPageComponent) {
+.factory('$mmaModPage', function($mmFilepool, $mmSite, $mmFS, $http, $log, $q, mmaModPageComponent) {
     $log = $log.getInstance('$mmaModPage');
 
     var self = {};
@@ -164,7 +164,9 @@ angular.module('mm.addons.mod_page')
                 return $mmFilepool.downloadUrl($mmSite.getId(), indexUrl, false, mmaModPageComponent, moduleId);
             } else {
                 // We return the live URL.
-                return $q.when($mmSite.fixPluginfileURL(indexUrl));
+                deferred = $q.defer();
+                deferred.resolve($mmSite.fixPluginfileURL(indexUrl));
+                return deferred.promise;
             }
         })();
 
@@ -175,8 +177,23 @@ angular.module('mm.addons.mod_page')
                     return $q.reject();
                 } else {
                     // Now that we have the content, we update the SRC to point back to
-                    // the external resource. That will b caught by mm-format-text.
-                    return $mmUtil.restoreSourcesInHtml(response.data, paths);
+                    // the external resource. That will be caught by mm-format-text.
+                    var html = angular.element('<div>');
+                    html.html(response.data);
+                    angular.forEach(html.find('img'), function(img) {
+                        var src = paths[decodeURIComponent(img.getAttribute('src'))];
+                        if (typeof src !== 'undefined') {
+                            img.setAttribute('src', src);
+                        }
+                    });
+                    // We do the same for links.
+                    angular.forEach(html.find('a'), function(anchor) {
+                        var href = paths[decodeURIComponent(anchor.getAttribute('href'))];
+                        if (typeof href !== 'undefined') {
+                            anchor.setAttribute('href', href);
+                        }
+                    });
+                    return html.html();
                 }
             });
         });
@@ -225,23 +242,6 @@ angular.module('mm.addons.mod_page')
             encodedUrl = encodeURIComponent(url);
 
         return (filename === 'index.html' && (fileurl.indexOf(url) > 0 || fileurl.indexOf(encodedUrl) > 0 ));
-    };
-
-    /**
-     * Check if page plugin is enabled in a certain site.
-     *
-     * @module mm.addons.mod_page
-     * @ngdoc method
-     * @name $mmaModPage#isPluginEnabled
-     * @param  {String} [siteId] Site ID. If not defined, current site.
-     * @return {Promise}         Promise resolved with true if plugin is enabled, rejected or resolved with false otherwise.
-     */
-    self.isPluginEnabled = function(siteId) {
-        siteId = siteId || $mmSite.getId();
-
-        return $mmSitesManager.getSite(siteId).then(function(site) {
-            return site.canDownloadFiles();
-        });
     };
 
     /**
