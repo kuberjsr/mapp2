@@ -59,9 +59,7 @@ angular.module('mm.core.login', [])
         templateUrl: 'core/components/login/templates/credentials.html',
         controller: 'mmLoginCredentialsCtrl',
         params: {
-            siteurl: '',
-            username: '',
-            urltoopen: '' // For content links.
+            siteurl: ''
         },
         onEnter: function($state, $stateParams) {
             // Do not allow access to this page when the URL was not passed.
@@ -115,7 +113,7 @@ angular.module('mm.core.login', [])
             return;
         }
 
-        if (toState.name.substr(0, 8) === 'redirect' || toState.name.substr(0, 15) === 'mm_contentlinks') {
+        if (toState.name.substr(0, 8) === 'redirect') {
             return;
         } else if ((toState.name.substr(0, 8) !== 'mm_login' || toState.name === 'mm_login.reconnect') && !$mmSite.isLoggedIn()) {
             // We are not logged in.
@@ -136,7 +134,7 @@ angular.module('mm.core.login', [])
                 disableAnimate: true,
                 disableBack: true
             });
-            $mmLoginHelper.goToSiteInitialPage();
+            $state.transitionTo('site.mm_courses');
         }
 
     });
@@ -184,7 +182,6 @@ angular.module('mm.core.login', [])
         }
 
         // App opened using custom URL scheme. Probably an SSO authentication.
-        $mmLoginHelper.setSSOLoginOngoing(true);
         $log.debug('App launched by URL');
 
         var modal = $mmUtil.showModalLoading('mm.login.authenticating', true);
@@ -202,17 +199,19 @@ angular.module('mm.core.login', [])
 
         $mmLoginHelper.validateBrowserSSOLogin(url).then(function(sitedata) {
 
-            return $mmLoginHelper.handleSSOLoginAuthentication(sitedata.siteurl, sitedata.token).then(function() {
-                return $mmLoginHelper.goToSiteInitialPage();
+            $mmLoginHelper.handleSSOLoginAuthentication(sitedata.siteurl, sitedata.token).then(function() {
+                $state.go('site.mm_courses');
+            }, function(error) {
+                $mmUtil.showErrorModal(error);
+            }).finally(function() {
+                modal.dismiss();
             });
 
-        }).catch(function(errorMessage) {
-            if (typeof errorMessage === 'string' && errorMessage !== '') {
+        }, function(errorMessage) {
+            modal.dismiss();
+            if (typeof(errorMessage) === 'string' && errorMessage != '') {
                 $mmUtil.showErrorModal(errorMessage);
             }
-        }).finally(function() {
-            modal.dismiss();
-            $mmLoginHelper.setSSOLoginOngoing(false);
         });
 
         return true;
