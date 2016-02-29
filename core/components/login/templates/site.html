@@ -4,14 +4,14 @@
   </ion-nav-buttons>-->
   <ion-content>
       <div class="list">
-        <div class="item item-text-wrap"></div>
+        <div class="item item-text-wrap">{{ 'mm.login.newsitedescription' | translate }}</div>
         <form>
           <label class="item item-input item-stacked-label">
             <span class="input-label">{{ 'mm.login.siteaddress' | translate }}</span>
-            <input type="url" value="lms.widesttech.com:8008"  >
+            <input type="url" value="lms.widesttech.com:8008" ng-model="siteurl" >
           </label>
           <div class="item">
-              <button class="btn btn-block btn-primary" ng-click="connect(siteurl)" ng-disabled="isInvalidUrl">{{ 'mm.login.connect' | translate }}</button>
+              <button class="button button-block" ng-click="connect(siteurl)" ng-disabled="isInvalidUrl">{{ 'mm.login.connect' | translate }}</button>
               <!-- <input type="submit" class="button button-block" value="{{ 'mm.login.connect' | translate }}" > -->
           </div>
         </form>
