@@ -1,14 +1,14 @@
-<ion-view view-title="{{ 'mm.login.connecttomoodle' | translate }}">
-  <ion-nav-buttons side="secondary">
+<ion-view view-title="Connect To Widesttech">
+  <!--<ion-nav-buttons side="secondary">
       <button class="button button-icon ion-ios-help-outline" ng-click="showHelp()" aria-label="{{ 'mm.core.help' | translate }}"></button>
-  </ion-nav-buttons>
+  </ion-nav-buttons>-->
   <ion-content>
       <div class="list">
         <div class="item item-text-wrap">{{ 'mm.login.newsitedescription' | translate }}</div>
         <form>
           <label class="item item-input item-stacked-label">
             <span class="input-label">{{ 'mm.login.siteaddress' | translate }}</span>
-            <input type="url" placeholder="moodle.org" ng-model="siteurl" mm-no-input-validation ng-change="validate(siteurl)" mm-auto-focus >
+            <input type="url" value="lms.widesttech.com:8008" ng-model="siteurl" mm-no-input-validation ng-change="validate(siteurl)" mm-auto-focus >
           </label>
           <div class="item">
               <button class="button button-block" ng-click="connect(siteurl)" ng-disabled="isInvalidUrl">{{ 'mm.login.connect' | translate }}</button>
